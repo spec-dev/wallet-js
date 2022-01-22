@@ -1,2 +1,2 @@
-import SpecWalletClient from './SpecWalletClient'
+import SpecWalletClient from './client'
 export { SpecWalletClient }
