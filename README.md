@@ -1,0 +1,1 @@
+# Spec Wallet JavaScript Client
