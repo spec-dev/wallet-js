@@ -1,5 +1,5 @@
 {
-    "name": "@spec/wallet-client",
+    "name": "@spec.dev/wallet-client",
     "version": "0.0.1",
     "description": "Spec wallet client",
     "keywords": [
@@ -25,15 +25,15 @@
         "build": "genversion src/lib/version.ts --es6 && run-s clean format build:*",
         "build:main": "tsc -p tsconfig.json",
         "build:module": "tsc -p tsconfig.module.json",
-        "types-generate": "dts-gen -m '@spec/wallet-client' -s",
+        "types-generate": "dts-gen -m '@spec.dev/wallet-client' -s",
         "test": "jest --runInBand"
     },
     "dependencies": {
+        "@walletconnect/web3-provider": "^1.7.1",
         "web3": "^1.7.0",
         "web3modal": "^1.9.5"
     },
     "devDependencies": {
-        "@types/faker": "^5.1.6",
         "@types/jest": "^26.0.13",
         "@types/jsonwebtoken": "^8.5.6",
         "@types/node": "^14.14.7",
