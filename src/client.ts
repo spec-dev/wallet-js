@@ -76,11 +76,23 @@ export default class SpecWalletClient {
         }
     }
 
+    async disconnect() {
+        if (!this._provider) return
+
+        try {
+            await this._provider.close()
+            await this.modal.clearCachedProvider()
+            this._provider = null
+        } catch (err) {
+            console.warn('Error disconnecting wallet', err)
+        }
+    }
+
     /**
      * Receive a notification every time an auth event happens.
      * @returns {Subscription} A subscription object which can be used to unsubscribe itself.
      */
-     onStateChange(callback: (event: string, data: any) => void): {
+    onStateChange(callback: (event: string, data: any) => void): {
         data: Subscription | null
         error: any
     } {
@@ -132,12 +144,12 @@ export default class SpecWalletClient {
     private async _createProvider(): Promise<any> {
         // Request connection to user's wallet.
         const provider = await this.modal.connect()
-        if (!provider) throw 'Couldn\'t establish wallet connection'
+        if (!provider) throw "Couldn't establish wallet connection"
 
         // Event: Provider connected.
         provider.on(providerEvents.CONNECT, (info: { chainId: number }) => {
             this._notifyAllSubscribers(events.CONNECTED, info)
-        });
+        })
 
         // Event: Provider disconnected.
         provider.on(providerEvents.DISCONNECT, (error: { code: number; message: string }) => {
@@ -152,7 +164,7 @@ export default class SpecWalletClient {
         // Event: Switched chains.
         provider.on(providerEvents.CHAIN_CHANGED, (chainId: number) => {
             this._notifyAllSubscribers(events.CHAIN_CHANGED, { chainId })
-        });
+        })
 
         return provider
     }
