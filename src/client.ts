@@ -21,10 +21,12 @@ export default class SpecWalletClient {
     protected settings: {
         modal: Partial<ICoreOptions>
     }
+
+    protected stateChangeEmitters: Map<string, Subscription> = new Map()
+
     protected _modal: Web3Modal | null
     protected _provider: any
     protected _web3: Web3 | null
-    protected stateChangeEmitters: Map<string, Subscription> = new Map()
 
     /**
      * Create a new web3 wallet client for use with Spec in the browser.
@@ -67,6 +69,10 @@ export default class SpecWalletClient {
         return this._modal
     }
 
+    get hasCachedProvider(): boolean {
+        return !!this.modal.cachedProvider
+    }
+
     async connect(): Promise<any> {
         try {
             await this.getWeb3()
@@ -80,7 +86,7 @@ export default class SpecWalletClient {
         if (!this._provider) return
 
         try {
-            await this._provider.close()
+            this._provider.close && (await this._provider.close())
             await this.modal.clearCachedProvider()
             this._provider = null
         } catch (err) {
@@ -93,7 +99,7 @@ export default class SpecWalletClient {
      * @returns {Subscription} A subscription object which can be used to unsubscribe itself.
      */
     onStateChange(callback: (event: string, data: any) => void): {
-        data: Subscription | null
+        listener: Subscription | null
         error: any
     } {
         try {
@@ -106,9 +112,9 @@ export default class SpecWalletClient {
                 },
             }
             this.stateChangeEmitters.set(id, subscription)
-            return { data: subscription, error: null }
+            return { listener: subscription, error: null }
         } catch (error) {
-            return { data: null, error }
+            return { listener: null, error }
         }
     }
 
@@ -157,8 +163,8 @@ export default class SpecWalletClient {
         })
 
         // Event: User switched accounts within the wallet.
-        provider.on(providerEvents.ACCOUNTS_CHANGED, (accounts: string[]) => {
-            this._notifyAllSubscribers(events.ACCOUNT_CHANGED, { address: firstOr(accounts, null) })
+        provider.on(providerEvents.ACCOUNTS_CHANGED, () => {
+            this._notifyAllSubscribers(events.ACCOUNT_CHANGED, { address: this.getCurrentAddress() })
         })
 
         // Event: Switched chains.
