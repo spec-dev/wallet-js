@@ -163,8 +163,11 @@ export default class SpecWalletClient {
         })
 
         // Event: User switched accounts within the wallet.
-        provider.on(providerEvents.ACCOUNTS_CHANGED, () => {
-            this._notifyAllSubscribers(events.ACCOUNT_CHANGED, { address: this.getCurrentAddress() })
+        provider.on(providerEvents.ACCOUNTS_CHANGED, async () => {
+            const newAddress = await this.getCurrentAddress()
+            this._notifyAllSubscribers(events.ACCOUNT_CHANGED, {
+                address: newAddress,
+            })
         })
 
         // Event: Switched chains.
