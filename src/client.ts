@@ -1,8 +1,9 @@
 import Web3Modal, { ICoreOptions, IProviderOptions, ThemeColors } from 'web3modal'
 import Web3 from 'web3'
-import { firstOr } from './lib/helpers'
-import { Providers, GenericObject } from './lib/types'
-import { providers } from './lib/providers'
+import { firstOr, uuid } from './lib/helpers'
+import { Providers, GenericObject, Subscription } from './lib/types'
+import { providers, providerEvents } from './lib/providers'
+import events from './lib/events'
 import { env } from './lib/env'
 import WalletConnectProvider from '@walletconnect/web3-provider'
 
@@ -23,6 +24,7 @@ export default class SpecWalletClient {
     protected _modal: Web3Modal | null
     protected _provider: any
     protected _web3: Web3 | null
+    protected stateChangeEmitters: Map<string, Subscription> = new Map()
 
     /**
      * Create a new web3 wallet client for use with Spec in the browser.
@@ -65,6 +67,39 @@ export default class SpecWalletClient {
         return this._modal
     }
 
+    async connect(): Promise<any> {
+        try {
+            await this.getWeb3()
+            return null
+        } catch (err) {
+            return err
+        }
+    }
+
+    /**
+     * Receive a notification every time an auth event happens.
+     * @returns {Subscription} A subscription object which can be used to unsubscribe itself.
+     */
+     onStateChange(callback: (event: string, data: any) => void): {
+        data: Subscription | null
+        error: any
+    } {
+        try {
+            const id: string = uuid()
+            const subscription: Subscription = {
+                id,
+                callback,
+                unsubscribe: () => {
+                    this.stateChangeEmitters.delete(id)
+                },
+            }
+            this.stateChangeEmitters.set(id, subscription)
+            return { data: subscription, error: null }
+        } catch (error) {
+            return { data: null, error }
+        }
+    }
+
     async getWeb3(): Promise<Web3> {
         if (!this._web3) {
             this._web3 = new Web3(await this.getProvider())
@@ -74,18 +109,9 @@ export default class SpecWalletClient {
 
     async getProvider(): Promise<any> {
         if (!this._provider) {
-            this._provider = await this.modal.connect()
+            this._provider = await this._createProvider()
         }
         return this._provider
-    }
-
-    async connect(): Promise<any> {
-        try {
-            await this.getWeb3()
-            return null
-        } catch (err) {
-            return err
-        }
     }
 
     async signMessage(address: string, message: string, password: string): Promise<string> {
@@ -101,6 +127,38 @@ export default class SpecWalletClient {
     async getAddresses(): Promise<string[]> {
         const web3 = await this.getWeb3()
         return await web3.eth.getAccounts()
+    }
+
+    private async _createProvider(): Promise<any> {
+        // Request connection to user's wallet.
+        const provider = await this.modal.connect()
+        if (!provider) throw 'Couldn\'t establish wallet connection'
+
+        // Event: Provider connected.
+        provider.on(providerEvents.CONNECT, (info: { chainId: number }) => {
+            this._notifyAllSubscribers(events.CONNECTED, info)
+        });
+
+        // Event: Provider disconnected.
+        provider.on(providerEvents.DISCONNECT, (error: { code: number; message: string }) => {
+            this._notifyAllSubscribers(events.DISCONNECTED, error)
+        })
+
+        // Event: User switched accounts within the wallet.
+        provider.on(providerEvents.ACCOUNTS_CHANGED, (accounts: string[]) => {
+            this._notifyAllSubscribers(events.ACCOUNT_CHANGED, { address: firstOr(accounts, null) })
+        })
+
+        // Event: Switched chains.
+        provider.on(providerEvents.CHAIN_CHANGED, (chainId: number) => {
+            this._notifyAllSubscribers(events.CHAIN_CHANGED, { chainId })
+        });
+
+        return provider
+    }
+
+    private _notifyAllSubscribers(event: string, data: object) {
+        this.stateChangeEmitters.forEach((x) => x.callback(event, data))
     }
 
     private _shouldDisableInjectedProvider(
@@ -122,7 +180,7 @@ export default class SpecWalletClient {
     ): IProviderOptions {
         const providerOptions: IProviderOptions = {}
 
-        // Enable WalletConnect provider if infuraId env var is set and it's not explictly disabled.
+        // Enable WalletConnect provider if not explicitly disabled and infuraId env-var is set.
         if (env.INFURA_ID && enabledProviders[providers.WALLETCONNECT] !== false) {
             providerOptions[providers.WALLETCONNECT] = {
                 package: WalletConnectProvider,

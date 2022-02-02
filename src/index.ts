@@ -1,2 +1,3 @@
 import SpecWalletClient from './client'
-export { SpecWalletClient }
+import events from './lib/events'
+export { SpecWalletClient, events }
