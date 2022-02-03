@@ -30,6 +30,7 @@
     },
     "dependencies": {
         "@walletconnect/web3-provider": "^1.7.1",
+        "walletlink": "^2.4.6",
         "web3": "^1.7.0",
         "web3modal": "^1.9.5"
     },

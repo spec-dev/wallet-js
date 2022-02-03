@@ -6,11 +6,13 @@ import { providers, providerEvents } from './lib/providers'
 import events from './lib/events'
 import { env } from './lib/env'
 import WalletConnectProvider from '@walletconnect/web3-provider'
+import WalletLink from 'walletlink'
 
 const DEFAULT_OPTIONS = {
     providers: {
         injected: true,
         [providers.WALLETCONNECT]: true,
+        [providers.WALLETLINK]: true,
     },
     modal: {
         cacheProvider: true,
@@ -23,7 +25,6 @@ export default class SpecWalletClient {
     }
 
     protected stateChangeEmitters: Map<string, Subscription> = new Map()
-
     protected _modal: Web3Modal | null
     protected _provider: any
     protected _web3: Web3 | null
@@ -201,11 +202,22 @@ export default class SpecWalletClient {
     ): IProviderOptions {
         const providerOptions: IProviderOptions = {}
 
-        // Enable WalletConnect provider if not explicitly disabled and infuraId env-var is set.
+        // Enable WalletConnect if not explicitly disabled and infuraId env-var is set.
         if (env.INFURA_ID && enabledProviders[providers.WALLETCONNECT] !== false) {
             providerOptions[providers.WALLETCONNECT] = {
                 package: WalletConnectProvider,
                 options: {
+                    infuraId: env.INFURA_ID,
+                },
+            }
+        }
+
+        // Enable Walletlink (Coinbase Wallet) if not explicitly disabled and infuraId env-var is set.
+        if (env.INFURA_ID && enabledProviders[providers.WALLETLINK] !== false) {
+            providerOptions[providers.WALLETLINK] = {
+                package: WalletLink,
+                options: {
+                    appName: 'Coinbase',
                     infuraId: env.INFURA_ID,
                 },
             }

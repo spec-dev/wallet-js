@@ -1,5 +1,6 @@
 export const providers = {
     WALLETCONNECT: 'walletconnect',
+    WALLETLINK: 'walletlink',
 }
 
 export const providerEvents = {
