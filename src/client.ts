@@ -12,7 +12,7 @@ const DEFAULT_OPTIONS = {
     providers: {
         injected: true,
         [providers.WALLETCONNECT]: true,
-        [providers.WALLETLINK]: true,
+        [providers.WALLETLINK]: false,
     },
     modal: {
         cacheProvider: true,
