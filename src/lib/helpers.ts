@@ -9,3 +9,5 @@ export function uuid() {
         return v.toString(16)
     })
 }
+
+export const isBrowser = () => typeof window !== 'undefined'

@@ -1,6 +1,6 @@
 import Web3Modal, { ICoreOptions, IProviderOptions, ThemeColors } from 'web3modal'
 import Web3 from 'web3'
-import { firstOr, uuid } from './lib/helpers'
+import { firstOr, uuid, isBrowser } from './lib/helpers'
 import { Providers, GenericObject, Subscription } from './lib/types'
 import { providers, providerEvents } from './lib/providers'
 import events from './lib/events'
@@ -71,7 +71,10 @@ export default class SpecWalletClient {
     }
 
     get hasCachedProvider(): boolean {
-        return !!this.modal.cachedProvider
+        return (
+            !!this.modal.cachedProvider ||
+            (isBrowser() && !!(localStorage?.getItem('WEB3_CONNECT_CACHED_PROVIDER')))
+        )
     }
 
     async connect(): Promise<any> {
