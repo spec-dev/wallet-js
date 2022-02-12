@@ -73,7 +73,7 @@ export default class SpecWalletClient {
     get hasCachedProvider(): boolean {
         return (
             !!this.modal.cachedProvider ||
-            (isBrowser() && !!(localStorage?.getItem('WEB3_CONNECT_CACHED_PROVIDER')))
+            (isBrowser() && !!localStorage?.getItem('WEB3_CONNECT_CACHED_PROVIDER'))
         )
     }
 
